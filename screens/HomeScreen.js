@@ -35,11 +35,12 @@ export default function HomeScreen() {
   const handleLocation = (loc) => {
     console.log("location: ", loc);
     setLocations([]);
-
+    toggleSearch(false);
     fetchWeatherForecast({
       cityName: loc.name,
       days: "7",
     }).then((data) => {
+      setWeather(data);
       console.log("got forecast: ", data);
     });
   };
