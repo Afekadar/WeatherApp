@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { theme } from "../theme";
 import {
@@ -18,6 +18,8 @@ import {
   MagnifyingGlassIcon,
 } from "react-native-heroicons/outline";
 import { MapPinIcon } from "react-native-heroicons/solid";
+import { debounce } from "lodash";
+import { fetchLocations, fetchWeatherForecast } from "../api/weather";
 
 const DismissKeyboard = ({ children }) => (
   <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -27,11 +29,30 @@ const DismissKeyboard = ({ children }) => (
 
 export default function HomeScreen() {
   const [showSearch, toggleSearch] = useState(false);
-  const [locations, setLocations] = useState([1, 2, 3]);
+  const [locations, setLocations] = useState([]);
+  const [weather, setWeather] = useState({});
 
   const handleLocation = (loc) => {
     console.log("location: ", loc);
+    setLocations([]);
+
+    fetchWeatherForecast({
+      cityName: loc.name,
+      days: "7",
+    }).then((data) => {
+      console.log("got forecast: ", data);
+    });
   };
+
+  const handleSearch = (value) => {
+    // Fetch locations
+    if (value.length > 2) {
+      fetchLocations({ cityName: value }).then((data) => {
+        setLocations(data);
+      });
+    }
+  };
+  const handleTextDebounce = useCallback(debounce(handleSearch, 1200), []);
 
   return (
     <DismissKeyboard>
@@ -56,6 +77,7 @@ export default function HomeScreen() {
               >
                 {showSearch ? (
                   <TextInput
+                    onChangeText={handleTextDebounce}
                     placeholder="Search city"
                     placeholderTextColor={"lightgray"}
                     className="pl-6 pb-1 h-10 flex-1 text-base text-white"
@@ -88,7 +110,7 @@ export default function HomeScreen() {
                       >
                         <MapPinIcon size={20} color="gray" />
                         <Text className="text-black text-lg ml-2">
-                          London, United Kingdom
+                          {loc?.name}, {loc?.country}
                         </Text>
                       </TouchableOpacity>
                     );
